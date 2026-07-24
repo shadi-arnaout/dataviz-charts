@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bar Chart Race</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#ffffff;--fg:#0a1628;--muted:#64748b;--border:rgba(10,22,40,0.12);
+  --surface:#f8f9fb;--surface2:#f0f2f5;--card:#ffffff;
+  --primary:#2251FF;--accent:#00A9F4;--radius:4px;
+  --grid-color:#e2e8f0;--tick-color:#64748b;
+}
+.dark{
+  --bg:#051C2C;--fg:#e8ecf4;--muted:#7a8fa6;--border:rgba(255,255,255,0.1);
+  --surface:#0d2236;--surface2:#122840;--card:#0d2236;
+  --primary:#4C79FF;--accent:#00A9F4;
+  --grid-color:#1a3550;--tick-color:#7a8fa6;
+}
+body{font-family:Inter,ui-sans-serif,system-ui,sans-serif;background:var(--bg);color:var(--fg);font-size:14px;-webkit-font-smoothing:antialiased;transition:background .2s,color .2s}
+input[type=text],input[type=number]{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:5px 8px;color:var(--fg);font-size:12px;width:100%;outline:none}
+input[type=text]:focus,input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 2px rgba(76,121,255,.2)}
+input[type=range]{accent-color:var(--primary);cursor:pointer}
+input[type=checkbox]{accent-color:var(--primary);cursor:pointer;width:15px;height:15px}
+button{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:5px 12px;font-size:12px;color:var(--fg);cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s}
+button:hover{background:var(--surface2);border-color:rgba(76,121,255,.4)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--bg)}
+.topbar-title{font-size:13px;font-weight:600;color:var(--fg)}
+.theme-btn{display:flex;align-items:center;gap:6px;padding:5px 12px;font-size:12px;border-radius:999px}
+.theme-btn:hover{border-color:var(--primary);color:var(--primary)}
+.chart-wrap{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;padding:20px}
+.chart-area{flex:1;min-width:280px}
+.side-panel{width:230px;flex-shrink:0;font-size:13px}
+.section{margin-bottom:16px}
+.section-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px}
+.canvas-wrap{position:relative;width:100%;height:320px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:12px;color:var(--muted)}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-swatch{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.palette-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:var(--radius);cursor:pointer;margin-bottom:4px;border:1px solid var(--border)}
+.palette-row:hover{border-color:rgba(76,121,255,.4)}
+.palette-row.active{border:1.5px solid var(--primary);background:rgba(76,121,255,.1)}
+.palette-swatches{display:flex;gap:2px;flex:1}
+.palette-swatch{height:14px;flex:1;border-radius:2px}
+.palette-name{font-size:11px;color:var(--muted);width:60px;text-align:right}
+.option-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.option-row label{font-size:12px;color:var(--fg)}
+.table-wrap{border-top:1px solid var(--border);padding:14px 20px 20px}
+.table-btns{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.csv-status{font-size:11px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--surface);font-weight:500;color:var(--muted);font-size:12px;text-align:left;border:1px solid var(--border);padding:6px 10px}
+td{border:1px solid var(--border);padding:6px 10px}
+td input{background:transparent;border:none;outline:none;font-size:13px;color:var(--fg);width:100%;min-width:50px;padding:0}
+th input{background:transparent;border:none;outline:none;font-weight:500;font-size:12px;color:var(--muted);width:100%;padding:0}
+.del-btn{border:none;background:none;padding:2px 6px;color:var(--muted);font-size:16px;cursor:pointer;line-height:1}
+.chart-title{font-size:16px;font-weight:500;text-align:center;margin-bottom:2px;display:none}
+.chart-subtitle{font-size:12px;color:var(--muted);text-align:center;margin-bottom:8px;display:none}
+.col-toggle-btn{padding:2px 10px;border-radius:999px;font-size:11px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted)}
+.col-toggle-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.col-toggle-btn.cat{background:var(--surface);color:var(--muted);cursor:default}
+.replay-bar{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding:8px 4px 2px;margin-top:4px}
+.frame-label{font-size:28px;font-weight:700;color:var(--fg);font-variant-numeric:tabular-nums}
+.replay-btn{font-size:12px;padding:4px 12px}
+
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="topbar-title">Bar Chart Race</span>
+  <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">☾ Dark</button>
+</div>
+<div class="chart-wrap">
+  <div class="chart-area">
+    <div class="chart-title" id="chartTitle"></div><div class="chart-subtitle" id="chartSubtitle"></div>
+    <div id="raceArea" style="height:320px;overflow:hidden;padding:8px 4px"></div>
+    <div class="replay-bar">
+      <button class="replay-btn" id="replayBtn" onclick="replay()">▶ Replay</button>
+      <div class="frame-label" id="frameLabel2">2019</div>
+    </div>
+  </div><div class="side-panel">
+  <div class="section"><div class="section-title">Text</div>
+    <input type="text" id="titleIn" placeholder="Give your chart a title" style="margin-bottom:6px">
+    <input type="text" id="subtitleIn" placeholder="Optional context">
+  </div>
+  <div class="section"><div class="section-title">Palette</div><div id="palette"></div></div>
+  <div class="section"><div class="section-title">Options</div>
+    <div class="option-row"><label>Show legend</label><input type="checkbox" id="showLegend" checked></div>
+    <div class="option-row"><label>Frame speed <span id="frameLabel">1200ms</span></label><input type="range" id="frameSlider" min="400" max="3000" step="100" value="1200" style="width:90px"></div>
+  </div>
+</div>
+</div>
+<div class="table-wrap">
+  <div class="table-btns"><button onclick="document.getElementById('csvFile').click()">↑ Import CSV</button>
+    <input type="file" id="csvFile" accept=".csv" style="display:none">
+    <button onclick="addRow()">+ Row</button><button onclick="addCol()">+ Column</button>
+    <span class="csv-status" id="csvStatus"></span>
+  </div><div style="overflow-x:auto"><table id="dataTable"></table></div>
+</div>
+<script>
+const PALETTES={
+  indigo:["#051C2C","#2251FF","#00A9F4","#00B8A9","#E4002B","#7A5AF8","#F5B335","#3D9970"],
+  ocean:["#051C2C","#0c4a6e","#0369a1","#0284c7","#0ea5e9","#38bdf8","#7dd3fc","#bae6fd"],
+  sunset:["#7A0019","#E4002B","#F5B335","#FF6B35","#C44569","#7A5AF8","#2251FF","#00A9F4"],
+  mono:["#051C2C","#1e293b","#334155","#475569","#64748b","#94a3b8","#cbd5e1","#e2e8f0"],
+  botanical:["#052e16","#166534","#3D9970","#00B8A9","#84cc16","#F5B335","#0369a1","#2251FF"],
+};
+const PNAMES={indigo:"Indigo",ocean:"Ocean",sunset:"Sunset",mono:"Mono",botanical:"Botanical"};
+function pal(name,i){return PALETTES[name][i%PALETTES[name].length];}
+
+
+let _dark=false;
+function toggleTheme(){
+  _dark=!_dark;
+  document.body.classList.toggle('dark',_dark);
+  const btn=document.getElementById('themeBtn');
+  if(btn)btn.textContent=_dark?'☀ Light':'☾ Dark';
+  if(typeof onThemeChange==='function')onThemeChange(_dark);
+}
+function isDark(){return _dark;}
+function gridColor(){return _dark?'#1a3550':'#e2e8f0';}
+function tickColor(){return _dark?'#7a8fa6':'#64748b';}
+
+
+function renderPalette(container,cur,onSelect){
+  container.innerHTML=Object.keys(PALETTES).map(name=>{
+    const sw=PALETTES[name].slice(0,6).map(c=>`<span class="palette-swatch" style="background:${c}"></span>`).join('');
+    return `<div class="palette-row${name===cur?' active':''}" onclick="(${onSelect.toString()})('${name.replace(/'/g,"\'")}')">
+      <div class="palette-swatches">${sw}</div><span class="palette-name">${PNAMES[name]}</span>
+    </div>`;
+  }).join('');
+}
+function renderLegend(el,show,cols,palette){
+  el.style.display=show?'flex':'none';
+  if(!show)return;
+  el.innerHTML=cols.map((c,i)=>`<span class="legend-item"><span class="legend-swatch" style="background:${pal(palette,i)}"></span>${c}</span>`).join('');
+}
+function renderColToggles(container,allCols,activeCols,onToggle){
+  container.innerHTML=allCols.map((c,i)=>{
+    const isCat=i===0;
+    const isActive=!isCat&&activeCols.includes(c);
+    return `<button class="col-toggle-btn${isCat?' cat':isActive?' active':''}" ${isCat?'disabled':''} onclick="(${onToggle.toString()})('${c.replace(/'/g,"\'")}') ">${c}</button>`;
+  }).join(' ');
+}
+function renderTable(table,cols,rows,onCellChange,onColChange,onDeleteRow){
+  let h='<thead><tr>';
+  cols.forEach((c,ci)=>{h+=`<th><input value="${c.replace(/"/g,'&quot;')}" onchange="(${onColChange.toString()})(${ci},this.value)"></th>`;});
+  h+='<th style="border:none;width:20px"></th></tr></thead><tbody>';
+  rows.forEach((row,ri)=>{
+    h+='<tr>';
+    row.forEach((cell,ci)=>{h+=`<td><input value="${String(cell).replace(/"/g,'&quot;')}" onchange="(${onCellChange.toString()})(${ri},${ci},this.value)"></td>`;});
+    h+=`<td style="border:none"><button class="del-btn" onclick="(${onDeleteRow.toString()})(${ri})">×</button></td></tr>`;
+  });
+  h+='</tbody>';
+  table.innerHTML=h;
+}
+function setupCSV(inputEl,statusEl,onLoad){
+  inputEl.onchange=function(e){
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      try{
+        const lines=ev.target.result.trim().split('\n').map(l=>l.trim()).filter(l=>l);
+        if(lines.length<2)throw new Error('Need header + data rows');
+        const cols=lines[0].split(',').map(c=>c.trim().replace(/^"|"$/g,''));
+        const rows=lines.slice(1).map(line=>line.split(',').map((v,i)=>{v=v.trim().replace(/^"|"$/g,'');return i===0?v:(parseFloat(v)||0);}));
+        onLoad(cols,rows);
+        statusEl.textContent='✓ '+f.name;
+      }catch(err){statusEl.textContent='✗ '+err.message;}
+      e.target.value='';
+    };
+    r.readAsText(f);
+  };
+}
+
+let tbl={cols:['Brand','2019','2020','2021','2022','2023','2024'],
+  rows:[['Apple',260,275,366,394,383,391],['Samsung',197,200,244,245,200,220],
+        ['Microsoft',126,143,168,198,212,245],['Google',162,182,258,283,307,350],
+        ['Amazon',281,386,470,514,575,638],['Meta',71,86,118,116,135,165]]};
+let curPal='indigo';let frameMs=1200;let t=0,playing=true,raf=null,last=0;
+function onThemeChange(){renderFrame();}
+function getFrames(){return tbl.cols.slice(1);}
+function getRacers(){const frames=getFrames();return tbl.rows.map((r,i)=>({name:String(r[0]),color:pal(curPal,i),values:frames.map((_,fi)=>parseFloat(r[fi+1])||0)}));}
+function lerp(a,b,t){return a*(1-t)+b*t;}
+function renderFrame(){
+  const frames=getFrames();const racers=getRacers();if(frames.length<1)return;
+  const i0=Math.min(Math.floor(t),frames.length-1),i1=Math.min(i0+1,frames.length-1),alpha=t-i0;
+  const items=racers.map(r=>({name:r.name,color:r.color,value:lerp(r.values[i0],r.values[i1],alpha)})).sort((a,b)=>b.value-a.value);
+  const max=Math.max(1,...items.map(i=>i.value));
+  const area=document.getElementById('raceArea');const H=area.clientHeight||280;const rowH=Math.min(32,Math.floor(H/items.length)-4);
+  const textColor=isDark()?'#a0b4c8':'#64748b';const valColor=isDark()?'#e8ecf4':'#0a1628';
+  area.innerHTML=items.map((it,rank)=>{
+    const w=(it.value/max*100).toFixed(1);
+    return `<div style="display:flex;align-items:center;height:${rowH+4}px">
+      <div style="width:90px;text-align:right;padding-right:8px;font-size:11px;font-weight:500;color:${textColor};flex-shrink:0">${rank+1}. ${it.name}</div>
+      <div style="flex:1;position:relative">
+        <div style="width:${w}%;height:${rowH}px;background:${it.color};border-radius:0 4px 4px 0;transition:width 200ms linear"></div>
+        <span style="position:absolute;left:calc(${w}% + 6px);top:50%;transform:translateY(-50%);font-size:11px;font-weight:600;white-space:nowrap;color:${valColor}">${Math.round(it.value).toLocaleString()}</span>
+      </div></div>`;
+  }).join('');
+  const label=alpha<0.5?frames[i0]:frames[i1];
+  document.getElementById('frameLabel2').textContent=label;
+  document.getElementById('replayBtn').textContent=playing?'Playing…':'▶ Replay';
+}
+function step(now){const dt=(now-last)/frameMs;last=now;const frames=getFrames();t=Math.min(t+dt,frames.length-1);renderFrame();if(t<frames.length-1&&playing)raf=requestAnimationFrame(step);else playing=false;}
+function replay(){t=0;playing=true;last=performance.now();if(raf)cancelAnimationFrame(raf);raf=requestAnimationFrame(step);}
+function selectPal(p){curPal=p;renderFrame();renderPalette(document.getElementById('palette'),curPal,selectPal);}
+function updateCell(ri,ci,v){tbl.rows[ri][ci]=ci===0?v:(parseFloat(v)||0);renderFrame();}
+function updateCol(ci,v){tbl.cols[ci]=v;renderFrame();}
+function deleteRow(ri){tbl.rows.splice(ri,1);renderTable(document.getElementById('dataTable'),tbl.cols,tbl.rows,updateCell,updateCol,deleteRow);renderFrame();}
+function addRow(){const r=['Racer '+(tbl.rows.length+1)];for(let i=1;i<tbl.cols.length;i++)r.push(0);tbl.rows.push(r);renderTable(document.getElementById('dataTable'),tbl.cols,tbl.rows,updateCell,updateCol,deleteRow);renderFrame();}
+function addCol(){tbl.cols.push(String((parseInt(tbl.cols[tbl.cols.length-1])||0)+1));tbl.rows.forEach(r=>r.push(0));renderTable(document.getElementById('dataTable'),tbl.cols,tbl.rows,updateCell,updateCol,deleteRow);renderFrame();}
+
+document.getElementById('titleIn').oninput=e=>{const el=document.getElementById('chartTitle');el.textContent=e.target.value;el.style.display=e.target.value?'block':'none';};
+document.getElementById('subtitleIn').oninput=e=>{const el=document.getElementById('chartSubtitle');el.textContent=e.target.value;el.style.display=e.target.value?'block':'none';};
+document.getElementById('frameSlider').oninput=e=>{frameMs=+e.target.value;document.getElementById('frameLabel').textContent=frameMs+'ms';};
+
+setupCSV(document.getElementById('csvFile'),document.getElementById('csvStatus'),(cols,rows)=>{tbl={cols,rows};renderTable(document.getElementById('dataTable'),tbl.cols,tbl.rows,updateCell,updateCol,deleteRow);replay();});
+renderPalette(document.getElementById('palette'),curPal,selectPal);
+renderTable(document.getElementById('dataTable'),tbl.cols,tbl.rows,updateCell,updateCol,deleteRow);
+setTimeout(()=>{last=performance.now();raf=requestAnimationFrame(step);},100);
+</script>
+</body>
+</html>

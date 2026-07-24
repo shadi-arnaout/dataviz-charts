@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bubble Race</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#ffffff;--fg:#0a1628;--muted:#64748b;--border:rgba(10,22,40,0.12);
+  --surface:#f8f9fb;--surface2:#f0f2f5;--card:#ffffff;
+  --primary:#2251FF;--accent:#00A9F4;--radius:4px;
+  --grid-color:#e2e8f0;--tick-color:#64748b;
+}
+.dark{
+  --bg:#051C2C;--fg:#e8ecf4;--muted:#7a8fa6;--border:rgba(255,255,255,0.1);
+  --surface:#0d2236;--surface2:#122840;--card:#0d2236;
+  --primary:#4C79FF;--accent:#00A9F4;
+  --grid-color:#1a3550;--tick-color:#7a8fa6;
+}
+body{font-family:Inter,ui-sans-serif,system-ui,sans-serif;background:var(--bg);color:var(--fg);font-size:14px;-webkit-font-smoothing:antialiased;transition:background .2s,color .2s}
+input[type=text],input[type=number]{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:5px 8px;color:var(--fg);font-size:12px;width:100%;outline:none}
+input[type=text]:focus,input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 2px rgba(76,121,255,.2)}
+input[type=range]{accent-color:var(--primary);cursor:pointer}
+input[type=checkbox]{accent-color:var(--primary);cursor:pointer;width:15px;height:15px}
+button{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:5px 12px;font-size:12px;color:var(--fg);cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s}
+button:hover{background:var(--surface2);border-color:rgba(76,121,255,.4)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--bg)}
+.topbar-title{font-size:13px;font-weight:600;color:var(--fg)}
+.theme-btn{display:flex;align-items:center;gap:6px;padding:5px 12px;font-size:12px;border-radius:999px}
+.theme-btn:hover{border-color:var(--primary);color:var(--primary)}
+.chart-wrap{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;padding:20px}
+.chart-area{flex:1;min-width:280px}
+.side-panel{width:230px;flex-shrink:0;font-size:13px}
+.section{margin-bottom:16px}
+.section-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px}
+.canvas-wrap{position:relative;width:100%;height:320px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:12px;color:var(--muted)}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-swatch{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.palette-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:var(--radius);cursor:pointer;margin-bottom:4px;border:1px solid var(--border)}
+.palette-row:hover{border-color:rgba(76,121,255,.4)}
+.palette-row.active{border:1.5px solid var(--primary);background:rgba(76,121,255,.1)}
+.palette-swatches{display:flex;gap:2px;flex:1}
+.palette-swatch{height:14px;flex:1;border-radius:2px}
+.palette-name{font-size:11px;color:var(--muted);width:60px;text-align:right}
+.option-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.option-row label{font-size:12px;color:var(--fg)}
+.table-wrap{border-top:1px solid var(--border);padding:14px 20px 20px}
+.table-btns{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.csv-status{font-size:11px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--surface);font-weight:500;color:var(--muted);font-size:12px;text-align:left;border:1px solid var(--border);padding:6px 10px}
+td{border:1px solid var(--border);padding:6px 10px}
+td input{background:transparent;border:none;outline:none;font-size:13px;color:var(--fg);width:100%;min-width:50px;padding:0}
+th input{background:transparent;border:none;outline:none;font-weight:500;font-size:12px;color:var(--muted);width:100%;padding:0}
+.del-btn{border:none;background:none;padding:2px 6px;color:var(--muted);font-size:16px;cursor:pointer;line-height:1}
+.chart-title{font-size:16px;font-weight:500;text-align:center;margin-bottom:2px;display:none}
+.chart-subtitle{font-size:12px;color:var(--muted);text-align:center;margin-bottom:8px;display:none}
+.col-toggle-btn{padding:2px 10px;border-radius:999px;font-size:11px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted)}
+.col-toggle-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.col-toggle-btn.cat{background:var(--surface);color:var(--muted);cursor:default}
+.replay-bar{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding:8px 4px 2px;margin-top:4px}
+.frame-label{font-size:28px;font-weight:700;color:var(--fg);font-variant-numeric:tabular-nums}
+.replay-btn{font-size:12px;padding:4px 12px}
+
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="topbar-title">Bubble Race</span>
+  <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">☾ Dark</button>
+</div>
+<div class="chart-wrap">
+  <div class="chart-area">
+    <div class="chart-title" id="chartTitle"></div><div class="chart-subtitle" id="chartSubtitle"></div>
+    <div style="position:relative;height:360px"><svg id="bbSvg" width="100%" height="100%" viewBox="0 0 800 360" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="replay-bar">
+      <button class="replay-btn" id="replayBtn" onclick="replay()">▶ Replay</button>
+      <input type="range" id="scrubber" min="0" max="1" step="0.01" value="0" style="flex:1;margin:0 12px">
+      <div class="frame-label" id="frameLabel2">2000</div>
+    </div>
+  </div><div class="side-panel">
+  <div class="section"><div class="section-title">Text</div>
+    <input type="text" id="titleIn" placeholder="Give your chart a title" style="margin-bottom:6px">
+    <input type="text" id="subtitleIn" placeholder="Optional context">
+  </div>
+  <div class="section"><div class="section-title">Palette</div><div id="palette"></div></div>
+  <div class="section"><div class="section-title">Options</div>
+    <div class="option-row"><label>Show legend</label><input type="checkbox" id="showLegend" checked></div>
+    <div class="option-row"><label>Frame speed <span id="frameLabel">1200ms</span></label><input type="range" id="frameSlider" min="400" max="3000" step="100" value="1200" style="width:90px"></div>
+  </div>
+</div>
+</div>
+<div class="table-wrap">
+  <div class="table-btns"><button onclick="document.getElementById('csvFile').click()">↑ Import CSV</button>
+    <input type="file" id="csvFile" accept=".csv" style="display:none">
+    <button onclick="addRow()">+ Row</button>
+    <span class="csv-status" id="csvStatus"></span>
+  </div><div style="overflow-x:auto"><table id="dataTable"></table></div>
+</div>
+<script>
+const PALETTES={
+  indigo:["#051C2C","#2251FF","#00A9F4","#00B8A9","#E4002B","#7A5AF8","#F5B335","#3D9970"],
+  ocean:["#051C2C","#0c4a6e","#0369a1","#0284c7","#0ea5e9","#38bdf8","#7dd3fc","#bae6fd"],
+  sunset:["#7A0019","#E4002B","#F5B335","#FF6B35","#C44569","#7A5AF8","#2251FF","#00A9F4"],
+  mono:["#051C2C","#1e293b","#334155","#475569","#64748b","#94a3b8","#cbd5e1","#e2e8f0"],
+  botanical:["#052e16","#166534","#3D9970","#00B8A9","#84cc16","#F5B335","#0369a1","#2251FF"],
+};
+const PNAMES={indigo:"Indigo",ocean:"Ocean",sunset:"Sunset",mono:"Mono",botanical:"Botanical"};
+function pal(name,i){return PALETTES[name][i%PALETTES[name].length];}
+
+
+let _dark=false;
+function toggleTheme(){
+  _dark=!_dark;
+  document.body.classList.toggle('dark',_dark);
+  const btn=document.getElementById('themeBtn');
+  if(btn)btn.textContent=_dark?'☀ Light':'☾ Dark';
+  if(typeof onThemeChange==='function')onThemeChange(_dark);
+}
+function isDark(){return _dark;}
+function gridColor(){return _dark?'#1a3550':'#e2e8f0';}
+function tickColor(){return _dark?'#7a8fa6':'#64748b';}
+
+
+function renderPalette(container,cur,onSelect){
+  container.innerHTML=Object.keys(PALETTES).map(name=>{
+    const sw=PALETTES[name].slice(0,6).map(c=>`<span class="palette-swatch" style="background:${c}"></span>`).join('');
+    return `<div class="palette-row${name===cur?' active':''}" onclick="(${onSelect.toString()})('${name.replace(/'/g,"\'")}')">
+      <div class="palette-swatches">${sw}</div><span class="palette-name">${PNAMES[name]}</span>
+    </div>`;
+  }).join('');
+}
+function renderLegend(el,show,cols,palette){
+  el.style.display=show?'flex':'none';
+  if(!show)return;
+  el.innerHTML=cols.map((c,i)=>`<span class="legend-item"><span class="legend-swatch" style="background:${pal(palette,i)}"></span>${c}</span>`).join('');
+}
+function renderColToggles(container,allCols,activeCols,onToggle){
+  container.innerHTML=allCols.map((c,i)=>{
+    const isCat=i===0;
+    const isActive=!isCat&&activeCols.includes(c);
+    return `<button class="col-toggle-btn${isCat?' cat':isActive?' active':''}" ${isCat?'disabled':''} onclick="(${onToggle.toString()})('${c.replace(/'/g,"\'")}') ">${c}</button>`;
+  }).join(' ');
+}
+function renderTable(table,cols,rows,onCellChange,onColChange,onDeleteRow){
+  let h='<thead><tr>';
+  cols.forEach((c,ci)=>{h+=`<th><input value="${c.replace(/"/g,'&quot;')}" onchange="(${onColChange.toString()})(${ci},this.value)"></th>`;});
+  h+='<th style="border:none;width:20px"></th></tr></thead><tbody>';
+  rows.forEach((row,ri)=>{
+    h+='<tr>';
+    row.forEach((cell,ci)=>{h+=`<td><input value="${String(cell).replace(/"/g,'&quot;')}" onchange="(${onCellChange.toString()})(${ri},${ci},this.value)"></td>`;});
+    h+=`<td style="border:none"><button class="del-btn" onclick="(${onDeleteRow.toString()})(${ri})">×</button></td></tr>`;
+  });
+  h+='</tbody>';
+  table.innerHTML=h;
+}
+function setupCSV(inputEl,statusEl,onLoad){
+  inputEl.onchange=function(e){
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      try{
+        const lines=ev.target.result.trim().split('\n').map(l=>l.trim()).filter(l=>l);
+        if(lines.length<2)throw new Error('Need header + data rows');
+        const cols=lines[0].split(',').map(c=>c.trim().replace(/^"|"$/g,''));
+        const rows=lines.slice(1).map(line=>line.split(',').map((v,i)=>{v=v.trim().replace(/^"|"$/g,'');return i===0?v:(parseFloat(v)||0);}));
+        onLoad(cols,rows);
+        statusEl.textContent='✓ '+f.name;
+      }catch(err){statusEl.textContent='✗ '+err.message;}
+      e.target.value='';
+    };
+    r.readAsText(f);
+  };
+}
+
+let tbl={cols:['Country','Year','GDP per capita','Life expectancy','Population (M)'],
+  rows:[['USA',2000,45000,76.6,282],['USA',2005,51000,77.6,295],['USA',2010,55000,78.5,309],['USA',2015,62000,78.7,320],['USA',2020,69000,77.3,331],
+        ['China',2000,3400,71.7,1263],['China',2005,5900,73.4,1304],['China',2010,9500,75,1338],['China',2015,14000,76.1,1371],['China',2020,17600,77.1,1412],
+        ['India',2000,2000,62.6,1057],['India',2005,2700,64.5,1147],['India',2010,4300,66.6,1234],['India',2015,5800,68.6,1310],['India',2020,6700,70.1,1396],
+        ['Germany',2000,36000,78.2,82],['Germany',2005,39000,79.4,82],['Germany',2010,42000,80.2,81],['Germany',2015,48000,80.6,82],['Germany',2020,54000,81.1,84],
+        ['Japan',2000,32000,81.1,127],['Japan',2005,34000,82,128],['Japan',2010,36000,82.8,128],['Japan',2015,38000,83.8,127],['Japan',2020,40000,84.6,125],
+        ['Brazil',2000,7800,70.1,175],['Brazil',2005,9200,71.7,187],['Brazil',2010,12500,73.2,196],['Brazil',2015,14400,74.7,205],['Brazil',2020,14800,75.9,213],
+        ['Nigeria',2000,1400,46.6,122],['Nigeria',2005,2100,48.8,141],['Nigeria',2010,3400,51.3,160],['Nigeria',2015,5300,53.1,181],['Nigeria',2020,5000,54.7,208],
+        ['UK',2000,32000,78,59],['UK',2005,37000,79.4,60],['UK',2010,39000,80.6,63],['UK',2015,43000,81,65],['UK',2020,46000,80.9,67]]};
+let curPal='indigo';let frameMs=1200;let t=0,playing=true,raf=null,last=0;
+const W=800,H=360,pL=52,pR=20,pT=16,pB=36,iW=W-pL-pR,iH=H-pT-pB;
+function onThemeChange(){renderFrame();}
+function buildEntities(){
+  const entMap=new Map();const framesSet=new Set();
+  tbl.rows.forEach(r=>{const ent=String(r[0]),yr=String(r[1]),x=parseFloat(r[2])||0,y=parseFloat(r[3])||0,sz=parseFloat(r[4])||1;framesSet.add(yr);if(!entMap.has(ent))entMap.set(ent,new Map());entMap.get(ent).set(yr,{x,y,size:sz});});
+  const frames=Array.from(framesSet).sort((a,b)=>Number(a)-Number(b));
+  const entities=Array.from(entMap.entries()).map(([name,byFrame],i)=>({name,color:pal(curPal,i),byFrame}));
+  return{frames,entities};
+}
+function lerp(a,b,t){return a*(1-t)+b*t;}
+function renderFrame(){
+  const{frames,entities}=buildEntities();if(!frames.length)return;
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity,maxS=1;
+  entities.forEach(e=>e.byFrame.forEach(v=>{if(v.x<minX)minX=v.x;if(v.x>maxX)maxX=v.x;if(v.y<minY)minY=v.y;if(v.y>maxY)maxY=v.y;if(v.size>maxS)maxS=v.size;}));
+  const xAt=v=>pL+((v-minX)/(maxX-minX||1))*iW;
+  const yAt=v=>pT+iH-((v-minY)/(maxY-minY||1))*iH;
+  const rAt=v=>6+Math.sqrt(Math.max(0,v)/(maxS||1))*34;
+  const i0=Math.min(Math.floor(t),frames.length-1),i1=Math.min(i0+1,frames.length-1),alpha=t-Math.floor(t);
+  const label=alpha<0.5?frames[i0]:frames[i1];
+  document.getElementById('frameLabel2').textContent=label;
+  document.getElementById('replayBtn').textContent=playing?'Playing…':'▶ Replay';
+  document.getElementById('scrubber').max=frames.length-1;document.getElementById('scrubber').value=t;
+  const gc=gridColor(),tc=tickColor(),fc=isDark()?'#e8ecf4':'#0a1628';
+  let svg=`<text x="${W-pR-8}" y="${pT+70}" text-anchor="end" font-size="72" font-weight="700" fill="${tc}" opacity="0.12">${label}</text>`;
+  for(let i=0;i<=4;i++){const v=minY+((maxY-minY)*i)/4;svg+=`<line x1="${pL}" x2="${pL+iW}" y1="${yAt(v)}" y2="${yAt(v)}" stroke="${gc}" stroke-dasharray="2 4"/><text x="${pL-4}" y="${yAt(v)+4}" text-anchor="end" font-size="10" fill="${tc}">${v.toFixed(1)}</text>`;}
+  for(let i=0;i<=5;i++){const v=minX+((maxX-minX)*i)/5;svg+=`<text x="${xAt(v)}" y="${H-pB+14}" text-anchor="middle" font-size="10" fill="${tc}">${Math.round(v).toLocaleString()}</text>`;}
+  svg+=`<text x="${pL+iW/2}" y="${H-4}" text-anchor="middle" font-size="11" fill="${tc}">GDP per capita</text>`;
+  const bubbles=entities.map(e=>{const a=e.byFrame.get(frames[i0]),b=e.byFrame.get(frames[i1]);if(!a&&!b)return null;const u=a&&b?{x:lerp(a.x,b.x,alpha),y:lerp(a.y,b.y,alpha),size:lerp(a.size,b.size,alpha)}:(a||b);return{...e,...u};}).filter(Boolean).sort((a,b)=>b.size-a.size);
+  bubbles.forEach(b=>{const r=rAt(b.size);svg+=`<circle cx="${xAt(b.x)}" cy="${yAt(b.y)}" r="${r}" fill="${b.color}" fill-opacity="0.55" stroke="${b.color}" stroke-width="1.5"/>${r>14?`<text x="${xAt(b.x)}" y="${yAt(b.y)+4}" text-anchor="middle" font-size="10" font-weight="600" fill="${fc}">${b.name}</text>`:''}`; });
+  document.getElementById('bbSvg').innerHTML=svg;
+}
+function step(now){const dt=(now-last)/frameMs;last=now;const{frames}=buildEntities();t=Math.min(t+dt,frames.length-1);renderFrame();if(t<frames.length-1&&playing)raf=requestAnimationFrame(step);else playing=false;}
+function replay(){t=0;playing=true;last=performance.now();if(raf)cancelAnimationFrame(raf);raf=requestAnimationFrame(step);}
+document.getElementById('scrubber').oninput=e=>{playing=false;t=+e.target.value;renderFrame();};
+function selectPal(p){curPal=p;renderFrame();renderPalette(document.getElementById('palette'),curPal,selectPal);}
+function updateCell(ri,ci,v){tbl.rows[ri][ci]=ci===0||(ci===1&&isNaN(+v))?v:(parseFloat(v)||0);renderFrame();}
+function updateCol(ci,v){tbl.cols[ci]=v;renderFrame();}
+function deleteRow(ri){tbl.rows.splice(ri,1);renderTable(document.getElementById('dataTable'),tbl.cols,tbl.rows,updateCell,updateCol,deleteRow);renderFrame();}
+function addRow(){tbl.rows.push(['Entity','2000',0,0,0]);renderTable(document.getElementById('dataTable'),tbl.cols,tbl.rows,updateCell,updateCol,deleteRow);renderFrame();}
+
+document.getElementById('titleIn').oninput=e=>{const el=document.getElementById('chartTitle');el.textContent=e.target.value;el.style.display=e.target.value?'block':'none';};
+document.getElementById('subtitleIn').oninput=e=>{const el=document.getElementById('chartSubtitle');el.textContent=e.target.value;el.style.display=e.target.value?'block':'none';};
+document.getElementById('frameSlider').oninput=e=>{frameMs=+e.target.value;document.getElementById('frameLabel').textContent=frameMs+'ms';};
+
+setupCSV(document.getElementById('csvFile'),document.getElementById('csvStatus'),(cols,rows)=>{tbl={cols,rows};renderTable(document.getElementById('dataTable'),tbl.cols,tbl.rows,updateCell,updateCol,deleteRow);replay();});
+renderPalette(document.getElementById('palette'),curPal,selectPal);
+renderTable(document.getElementById('dataTable'),tbl.cols,tbl.rows,updateCell,updateCol,deleteRow);
+setTimeout(()=>{last=performance.now();raf=requestAnimationFrame(step);},100);
+</script>
+</body>
+</html>

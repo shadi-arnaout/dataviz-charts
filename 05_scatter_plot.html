@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Scatter Plot</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#ffffff;--fg:#0a1628;--muted:#64748b;--border:rgba(10,22,40,0.12);
+  --surface:#f8f9fb;--surface2:#f0f2f5;--card:#ffffff;
+  --primary:#2251FF;--accent:#00A9F4;--radius:4px;
+  --grid-color:#e2e8f0;--tick-color:#64748b;
+}
+.dark{
+  --bg:#051C2C;--fg:#e8ecf4;--muted:#7a8fa6;--border:rgba(255,255,255,0.1);
+  --surface:#0d2236;--surface2:#122840;--card:#0d2236;
+  --primary:#4C79FF;--accent:#00A9F4;
+  --grid-color:#1a3550;--tick-color:#7a8fa6;
+}
+body{font-family:Inter,ui-sans-serif,system-ui,sans-serif;background:var(--bg);color:var(--fg);font-size:14px;-webkit-font-smoothing:antialiased;transition:background .2s,color .2s}
+input[type=text],input[type=number]{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:5px 8px;color:var(--fg);font-size:12px;width:100%;outline:none}
+input[type=text]:focus,input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 2px rgba(76,121,255,.2)}
+input[type=range]{accent-color:var(--primary);cursor:pointer}
+input[type=checkbox]{accent-color:var(--primary);cursor:pointer;width:15px;height:15px}
+button{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:5px 12px;font-size:12px;color:var(--fg);cursor:pointer;font-family:inherit;transition:background .15s,border-color .15s}
+button:hover{background:var(--surface2);border-color:rgba(76,121,255,.4)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);background:var(--bg)}
+.topbar-title{font-size:13px;font-weight:600;color:var(--fg)}
+.theme-btn{display:flex;align-items:center;gap:6px;padding:5px 12px;font-size:12px;border-radius:999px}
+.theme-btn:hover{border-color:var(--primary);color:var(--primary)}
+.chart-wrap{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;padding:20px}
+.chart-area{flex:1;min-width:280px}
+.side-panel{width:230px;flex-shrink:0;font-size:13px}
+.section{margin-bottom:16px}
+.section-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px}
+.canvas-wrap{position:relative;width:100%;height:320px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:12px;color:var(--muted)}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-swatch{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.palette-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:var(--radius);cursor:pointer;margin-bottom:4px;border:1px solid var(--border)}
+.palette-row:hover{border-color:rgba(76,121,255,.4)}
+.palette-row.active{border:1.5px solid var(--primary);background:rgba(76,121,255,.1)}
+.palette-swatches{display:flex;gap:2px;flex:1}
+.palette-swatch{height:14px;flex:1;border-radius:2px}
+.palette-name{font-size:11px;color:var(--muted);width:60px;text-align:right}
+.option-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.option-row label{font-size:12px;color:var(--fg)}
+.table-wrap{border-top:1px solid var(--border);padding:14px 20px 20px}
+.table-btns{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.csv-status{font-size:11px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--surface);font-weight:500;color:var(--muted);font-size:12px;text-align:left;border:1px solid var(--border);padding:6px 10px}
+td{border:1px solid var(--border);padding:6px 10px}
+td input{background:transparent;border:none;outline:none;font-size:13px;color:var(--fg);width:100%;min-width:50px;padding:0}
+th input{background:transparent;border:none;outline:none;font-weight:500;font-size:12px;color:var(--muted);width:100%;padding:0}
+.del-btn{border:none;background:none;padding:2px 6px;color:var(--muted);font-size:16px;cursor:pointer;line-height:1}
+.chart-title{font-size:16px;font-weight:500;text-align:center;margin-bottom:2px;display:none}
+.chart-subtitle{font-size:12px;color:var(--muted);text-align:center;margin-bottom:8px;display:none}
+.col-toggle-btn{padding:2px 10px;border-radius:999px;font-size:11px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted)}
+.col-toggle-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.col-toggle-btn.cat{background:var(--surface);color:var(--muted);cursor:default}
+.replay-bar{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding:8px 4px 2px;margin-top:4px}
+.frame-label{font-size:28px;font-weight:700;color:var(--fg);font-variant-numeric:tabular-nums}
+.replay-btn{font-size:12px;padding:4px 12px}
+
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="topbar-title">Scatter Plot</span>
+  <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">☾ Dark</button>
+</div>
+<div class="chart-wrap">
+  <div class="chart-area">
+    <div class="chart-title" id="chartTitle"></div><div class="chart-subtitle" id="chartSubtitle"></div>
+    <div class="canvas-wrap" style="height:340px"><canvas id="myChart"></canvas></div>
+  </div>
+  <div class="side-panel">
+    <div class="section"><div class="section-title">Text</div>
+      <input type="text" id="titleIn" placeholder="Give your chart a title" style="margin-bottom:6px">
+      <input type="text" id="subtitleIn" placeholder="Optional context">
+    </div>
+    <div class="section"><div class="section-title">Palette</div><div id="palette"></div></div>
+    <div class="section"><div class="section-title">Options</div>
+      <div class="option-row"><label>Show grid</label><input type="checkbox" id="showGrid" checked></div>
+      <div class="option-row"><label>Animation <span id="animLabel">800ms</span></label><input type="range" id="animSlider" min="0" max="2000" step="100" value="800" style="width:90px"></div>
+    </div>
+  </div>
+</div>
+<div class="table-wrap">
+  <div class="table-btns"><button onclick="document.getElementById('csvFile').click()">↑ Import CSV</button>
+    <input type="file" id="csvFile" accept=".csv" style="display:none">
+    <button onclick="addRow()">+ Row</button><span class="csv-status" id="csvStatus"></span>
+  </div><div style="overflow-x:auto"><table id="dataTable"></table></div>
+</div>
+<script>
+const PALETTES={
+  indigo:["#051C2C","#2251FF","#00A9F4","#00B8A9","#E4002B","#7A5AF8","#F5B335","#3D9970"],
+  ocean:["#051C2C","#0c4a6e","#0369a1","#0284c7","#0ea5e9","#38bdf8","#7dd3fc","#bae6fd"],
+  sunset:["#7A0019","#E4002B","#F5B335","#FF6B35","#C44569","#7A5AF8","#2251FF","#00A9F4"],
+  mono:["#051C2C","#1e293b","#334155","#475569","#64748b","#94a3b8","#cbd5e1","#e2e8f0"],
+  botanical:["#052e16","#166534","#3D9970","#00B8A9","#84cc16","#F5B335","#0369a1","#2251FF"],
+};
+const PNAMES={indigo:"Indigo",ocean:"Ocean",sunset:"Sunset",mono:"Mono",botanical:"Botanical"};
+function pal(name,i){return PALETTES[name][i%PALETTES[name].length];}
+
+
+let _dark=false;
+function toggleTheme(){
+  _dark=!_dark;
+  document.body.classList.toggle('dark',_dark);
+  const btn=document.getElementById('themeBtn');
+  if(btn)btn.textContent=_dark?'☀ Light':'☾ Dark';
+  if(typeof onThemeChange==='function')onThemeChange(_dark);
+}
+function isDark(){return _dark;}
+function gridColor(){return _dark?'#1a3550':'#e2e8f0';}
+function tickColor(){return _dark?'#7a8fa6':'#64748b';}
+
+
+function renderPalette(container,cur,onSelect){
+  container.innerHTML=Object.keys(PALETTES).map(name=>{
+    const sw=PALETTES[name].slice(0,6).map(c=>`<span class="palette-swatch" style="background:${c}"></span>`).join('');
+    return `<div class="palette-row${name===cur?' active':''}" onclick="(${onSelect.toString()})('${name.replace(/'/g,"\'")}')">
+      <div class="palette-swatches">${sw}</div><span class="palette-name">${PNAMES[name]}</span>
+    </div>`;
+  }).join('');
+}
+function renderLegend(el,show,cols,palette){
+  el.style.display=show?'flex':'none';
+  if(!show)return;
+  el.innerHTML=cols.map((c,i)=>`<span class="legend-item"><span class="legend-swatch" style="background:${pal(palette,i)}"></span>${c}</span>`).join('');
+}
+function renderColToggles(container,allCols,activeCols,onToggle){
+  container.innerHTML=allCols.map((c,i)=>{
+    const isCat=i===0;
+    const isActive=!isCat&&activeCols.includes(c);
+    return `<button class="col-toggle-btn${isCat?' cat':isActive?' active':''}" ${isCat?'disabled':''} onclick="(${onToggle.toString()})('${c.replace(/'/g,"\'")}') ">${c}</button>`;
+  }).join(' ');
+}
+function renderTable(table,cols,rows,onCellChange,onColChange,onDeleteRow){
+  let h='<thead><tr>';
+  cols.forEach((c,ci)=>{h+=`<th><input value="${c.replace(/"/g,'&quot;')}" onchange="(${onColChange.toString()})(${ci},this.value)"></th>`;});
+  h+='<th style="border:none;width:20px"></th></tr></thead><tbody>';
+  rows.forEach((row,ri)=>{
+    h+='<tr>';
+    row.forEach((cell,ci)=>{h+=`<td><input value="${String(cell).replace(/"/g,'&quot;')}" onchange="(${onCellChange.toString()})(${ri},${ci},this.value)"></td>`;});
+    h+=`<td style="border:none"><button class="del-btn" onclick="(${onDeleteRow.toString()})(${ri})">×</button></td></tr>`;
+  });
+  h+='</tbody>';
+  table.innerHTML=h;
+}
+function setupCSV(inputEl,statusEl,onLoad){
+  inputEl.onchange=function(e){
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      try{
+        const lines=ev.target.result.trim().split('\n').map(l=>l.trim()).filter(l=>l);
+        if(lines.length<2)throw new Error('Need header + data rows');
+        const cols=lines[0].split(',').map(c=>c.trim().replace(/^"|"$/g,''));
+        const rows=lines.slice(1).map(line=>line.split(',').map((v,i)=>{v=v.trim().replace(/^"|"$/g,'');return i===0?v:(parseFloat(v)||0);}));
+        onLoad(cols,rows);
+        statusEl.textContent='✓ '+f.name;
+      }catch(err){statusEl.textContent='✗ '+err.message;}
+      e.target.value='';
+    };
+    r.readAsText(f);
+  };
+}
+
+
+let tbl={cols:['Country','GDP per capita','Life expectancy','Population (M)'],
+  rows:[['USA',76000,78.9,331],['Germany',51000,81.2,84],['Japan',39000,84.4,125],['Brazil',9700,75.9,215],
+        ['India',2400,70.2,1417],['China',12700,78.2,1412],['Nigeria',2200,55,224],['UK',46000,81,67],['France',44000,82.5,65],['Kenya',2100,66.7,55]]};
+let curPal='sunset';let animMs=800;
+const chart=new Chart(document.getElementById('myChart'),{type:'bubble',data:{datasets:[]},options:{
+  responsive:true,maintainAspectRatio:false,animation:{duration:800},
+  plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const d=c.raw;return [`${d.label}`,`GDP: ${d.x.toLocaleString()}`,`Life exp: ${d.y}`,`Pop: ${d.r_raw}M`];}}}},
+  scales:{x:{grid:{color:gridColor()},ticks:{color:tickColor()},title:{display:true,text:'GDP per capita',color:'#64748b',font:{size:11}}},
+          y:{grid:{color:gridColor()},ticks:{color:tickColor()},title:{display:true,text:'Life expectancy',color:'#64748b',font:{size:11}}}}
+}});
+function onThemeChange(){chart.options.scales.x.grid.color=gridColor();chart.options.scales.y.grid.color=gridColor();chart.options.scales.x.ticks.color=tickColor();chart.options.scales.y.ticks.color=tickColor();chart.update('none');}
+function updateChart(){
+  const pts=tbl.rows.map(r=>({label:String(r[0]),x:parseFloat(r[1])||0,y:parseFloat(r[2])||0,r:Math.max(4,Math.sqrt(Math.max(0,parseFloat(r[3])||0)/1417)*30),r_raw:r[3]}));
+  chart.data.datasets=[{data:pts,backgroundColor:pal(curPal,0)+'99',borderColor:pal(curPal,0),borderWidth:1.5}];
+  chart.options.animation.duration=animMs;
+  chart.options.scales.x.grid.color=document.getElementById('showGrid').checked?gridColor():'transparent';
+  chart.options.scales.y.grid.color=document.getElementById('showGrid').checked?gridColor():'transparent';
+  chart.update();
+}
+function selectPal(p){curPal=p;updateChart();renderPalette(document.getElementById('palette'),curPal,selectPal);}
+function updateCell(ri,ci,v){tbl.rows[ri][ci]=ci===0?v:(parseFloat(v)||0);updateChart();}
+function updateCol(ci,v){tbl.cols[ci]=v;updateChart();}
+function deleteRow(ri){tbl.rows.splice(ri,1);renderTable(document.getElementById('dataTable'),tbl.cols,tbl.rows,updateCell,updateCol,deleteRow);updateChart();}
+function addRow(){tbl.rows.push(['Country',0,0,0]);renderTable(document.getElementById('dataTable'),tbl.cols,tbl.rows,updateCell,updateCol,deleteRow);updateChart();}
+document.getElementById('showGrid').onchange=()=>updateChart();
+document.getElementById('animSlider').oninput=e=>{animMs=+e.target.value;document.getElementById('animLabel').textContent=animMs+'ms';};
+document.getElementById('titleIn').oninput=e=>{const el=document.getElementById('chartTitle');el.textContent=e.target.value;el.style.display=e.target.value?'block':'none';};
+document.getElementById('subtitleIn').oninput=e=>{const el=document.getElementById('chartSubtitle');el.textContent=e.target.value;el.style.display=e.target.value?'block':'none';};
+setupCSV(document.getElementById('csvFile'),document.getElementById('csvStatus'),(cols,rows)=>{tbl={cols,rows};renderTable(document.getElementById('dataTable'),tbl.cols,tbl.rows,updateCell,updateCol,deleteRow);updateChart();});
+renderPalette(document.getElementById('palette'),curPal,selectPal);
+renderTable(document.getElementById('dataTable'),tbl.cols,tbl.rows,updateCell,updateCol,deleteRow);
+updateChart();
+</script>
+</body>
+</html>
